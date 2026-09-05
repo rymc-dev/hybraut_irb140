@@ -1,0 +1,166 @@
+% =================================
+% MSc Report - ROS Integration with ABB 1RB140
+% Compiler: latexmk
+% =================================
+\documentclass[11pt,a4paper]{report}
+
+% -- Core packages --
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]{\normalfont\huge\bfseries}{\thechapter}{1em}{}
+\titlespacing*{\chapter}{0pt}{-12pt}{18pt}
+\usepackage{setspace}
+\usepackage{parskip}
+\setlength{\parskip}{0.45em}
+\usepackage{enumitem}
+\setlist[itemize]{itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{itemsep=2pt,topsep=4pt}
+
+% -- Headers and footers --
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\nouppercase{\leftmark}}
+\fancyhead[R]{\small Report}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}\documentclass[11pt, a4paper]{report}
+
+{0.4pt}
+\setlength{\headheight}{15pt}
+
+% -- Figures, tables and code --
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{needspace}
+\usepackage{listings}
+\usepackage{etoolbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.15}
+
+% -- Code listing style --
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black}\bfseries,
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red!60!black},
+  backgroundcolor=\color{gray!8},
+  frame=single,
+  rulecolor=\color{gray!40},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  breaklines=true,
+  captionpos=b
+}
+
+% -- Gantt chart --
+\usepackage{pgfgantt}
+
+% -- Bibliography --
+\usepackage{cite}
+
+% -- Hyperlinks (load last) --
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue!70!black,
+  urlcolor=blue!70!black,
+  pdftitle={ROS Integration with the ABB IRB140 Robotic Platform},
+  pdfauthor={Ryan McKee}
+]{hyperref}
+
+\begin{document}
+\setstretch{1.10}
+\pagenumbering{gobble}
+
+% -- TITLE PAGE --
+\begin{titlepage}
+  \thispagestyle{empty}
+  \centering
+  \vspace*{2cm}
+
+  {\Large \textbf{Department of EEECS}}\\[0.5cm]
+  {\large University of Liverpool}\\[3cm]
+
+  {\LARGE \textbf{ROS Integration with the ABB IRB140 Robotic Platform}}\\[1cm]
+  {\large MSc Robotics \& IoT -- Msc Final Report}\\[3cm]
+
+  \begin{tabular}{rl}
+    \textbf{Author:}     & Ryan McKee \\[4pt]
+    \textbf{Student ID:} & 201954749  \\[4pt]
+    \textbf{Supervisor:} & Prof.\ Jeremy Smith \\[4pt]
+    \textbf{Module:}     & ELEC460 \\[4pt]
+    \textbf{Date:}       & \today \\
+  \end{tabular}
+
+  \vfill
+  {\small Submitted in partial fulfilment of the requirements for the degree of\\ Master of Science in Robotics \& IoT}
+\end{titlepage}
+\clearpage
+
+
+\chapter*{Acknowledgements}
+
+\chapter*{Abstract}
+
+\cleardoublepage
+\tableofcontents
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\cleardoublepage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+\chapter{Theory Analysis and Design}
+
+\sections{End Effector}
+
+\subsection{Requirements}
+
+\subsection{design}
+
+\subsection{Components assembly and build}
+
+\subsection {issues/future improvements}
+
+this is a prototype version of the end effector designed,
+we had some isuses when actually assembling the end effector
+these issues were two fold, first was that the reference sketches
+I utilized of the finger mounts did not give me the correct distance 
+between the mounting holes on the sides of the finger mounts so in future 
+the mounting arms need to be spaced out approx 2mm further to solve this
+we threaded drilled thought the mounting hole on the finger hold 
+by a tiny margin to give the leeway for assembling it. secondly we did not 
+have the M4x35mm screws from the cad assembly so the tool flange end effector adapter 
+neck should in future be made shorter to account for 30mm length instead to solve this problem,
+we grinded the 50mm M3 screws down by 20mm so we could properly mount the end effector. 
+
+One final problem we had was that the material of the fingers silicon did not have a high pressure
+tolerance therefore we had to be extermely careful with pressure regulators connected to the solonoid valves
+to ensure that we did not blow up the fingers, this was fine but in future it may be useful to utilzie 
+a strong material to alleviate the worrys as this would have been a time costly issues if it blew up on me. 
+
+\chapter{Findings/Results and Discussion}
+
+\chapter{Conclusions}
+
+\chapter{Recommendations/Future Work}
+
+\chapter{References/Bibliograph}
+
+\chapter{Appedices}
+\pagenumbering{roman}

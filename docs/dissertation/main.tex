@@ -27,9 +27,7 @@
 \fancyhead[L]{\small\nouppercase{\leftmark}}
 \fancyhead[R]{\small Report}
 \fancyfoot[C]{\thepage}
-\renewcommand{\headrulewidth}\documentclass[11pt, a4paper]{report}
-
-{0.4pt}
+\renewcommand{\headrulewidth}{0.4pt}
 \setlength{\headheight}{15pt}
 
 % -- Figures, tables and code --
@@ -40,6 +38,7 @@
 \usepackage{longtable}
 \usepackage{float}
 \usepackage{needspace}
+
 \usepackage{listings}
 \usepackage{etoolbox}
 \usepackage{xcolor}
@@ -76,9 +75,11 @@
   linkcolor=black,
   citecolor=blue!70!black,
   urlcolor=blue!70!black,
+  breaklinks=true,
   pdftitle={ROS Integration with the ABB IRB140 Robotic Platform},
   pdfauthor={Ryan McKee}
 ]{hyperref}
+\usepackage{xurl}
 
 \begin{document}
 \setstretch{1.10}
@@ -94,7 +95,7 @@
   {\large University of Liverpool}\\[3cm]
 
   {\LARGE \textbf{ROS Integration with the ABB IRB140 Robotic Platform}}\\[1cm]
-  {\large MSc Robotics \& IoT -- Msc Final Report}\\[3cm]
+  {\large MSc Robotics \& IoT -- MSc Final Report}\\[3cm]
 
   \begin{tabular}{rl}
     \textbf{Author:}     & Ryan McKee \\[4pt]
@@ -127,32 +128,90 @@
 
 \chapter{Theory Analysis and Design}
 
-\sections{End Effector}
+\section{End Effector}
 
 \subsection{Requirements}
 
-\subsection{design}
+\subsection{Design}
 
-\subsection{Components assembly and build}
+A two-part design: a tool flange adapter neck, which adds spacing between the tool flange
+and the base plate mounting for the components of the end effector.
 
-\subsection {issues/future improvements}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{./figures/design/end_effector_design/flange_adapter_drawing_image.png}
+  \caption{End effector tool flange adapter -- drawing}
+  \label{fig:flange-adapter-drawing}
+\end{figure}
 
-this is a prototype version of the end effector designed,
-we had some isuses when actually assembling the end effector
-these issues were two fold, first was that the reference sketches
-I utilized of the finger mounts did not give me the correct distance 
-between the mounting holes on the sides of the finger mounts so in future 
-the mounting arms need to be spaced out approx 2mm further to solve this
-we threaded drilled thought the mounting hole on the finger hold 
-by a tiny margin to give the leeway for assembling it. secondly we did not 
-have the M4x35mm screws from the cad assembly so the tool flange end effector adapter 
-neck should in future be made shorter to account for 30mm length instead to solve this problem,
-we grinded the 50mm M3 screws down by 20mm so we could properly mount the end effector. 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/design/end_effector_design/ABBIRB140_EndEffectBasePlate_2026-Sep-06_12-17-37PM-000_CustomizedView14776947834.png}
+  \caption{End effector tool flange adapter -- CAD view}
+  \label{fig:flange-adapter-cad}
+\end{figure}
 
-One final problem we had was that the material of the fingers silicon did not have a high pressure
-tolerance therefore we had to be extermely careful with pressure regulators connected to the solonoid valves
-to ensure that we did not blow up the fingers, this was fine but in future it may be useful to utilzie 
-a strong material to alleviate the worrys as this would have been a time costly issues if it blew up on me. 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{./figures/design/end_effector_design/end_effector_mounting_plate_drawing_image.png}
+  \caption{End effector adapter plate -- drawing}
+  \label{fig:adapter-plate-drawing}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{./figures/design/end_effector_design/end_effector_base_plate_render.PNG}
+  \caption{End effector adapter plate -- render}
+  \label{fig:adapter-plate-render}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/design/end_effector_design/end_effector_assembly_drawing_image.png}
+  \caption{End effector assembly -- drawing}
+  \label{fig:assembly-drawing-1}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/design/end_effector_design/end_effector_drawing_assembly_image.png}
+  \caption{End effector assembly -- drawing, exploded view}
+  \label{fig:assembly-drawing-2}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/design/end_effector_design/ABBIRB140_EndEffector_(Assembly)_Render.png}
+  \caption{End effector assembly -- render}
+  \label{fig:assembly-render}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/design/end_effector_design/ABBIRB140_EndEffector_(Assembly)_underside_render.png}
+  \caption{End effector assembly -- underside render}
+  \label{fig:assembly-render-underside}
+\end{figure}
+
+\subsection{Components Assembly and Build}
+
+\subsection{Issues and Future Improvements}
+
+This is a prototype version of the end effector design, and we had some issues when actually
+assembling it. These issues were twofold: first, the reference sketches I used for the finger
+mounts did not give the correct distance between the mounting holes on the sides of the finger
+mounts, so in future the mounting arms need to be spaced approximately 2\,mm further apart to
+solve this -- we drilled through the mounting hole on the finger mount by a tiny margin to give
+enough leeway to assemble it. Secondly, we did not have the M4$\times$35\,mm screws specified by
+the CAD assembly, so the tool flange end effector adapter neck should in future be made shorter to
+account for a 30\,mm screw length instead; to solve this problem, we ground the 50\,mm M3 screws
+down by 20\,mm so we could properly mount the end effector.
+
+One final problem was that the silicone material of the fingers did not have a high pressure
+tolerance, so we had to be extremely careful with the pressure regulators connected to the
+solenoid valves to ensure the fingers did not burst. This was fine, but in future it may be
+useful to use a stronger material to remove this concern, as bursting a finger during testing
+would have been a costly setback.
 
 \chapter{Findings/Results and Discussion}
 
@@ -160,7 +219,13 @@ a strong material to alleviate the worrys as this would have been a time costly 
 
 \chapter{Recommendations/Future Work}
 
-\chapter{References/Bibliograph}
-https://www.kaggle.com/datasets/ronanpickell/b100-lego-detection-dataset?resource=download - YOLO lego detection training data set
-\chapter{Appedices}
+\chapter{References/Bibliography}
+
+\begin{itemize}
+  \item \url{https://www.kaggle.com/datasets/ronanpickell/b100-lego-detection-dataset?resource=download} -- YOLO LEGO detection training dataset
+\end{itemize}
+
+\chapter{Appendices}
 \pagenumbering{roman}
+
+\end{document}

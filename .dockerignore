@@ -1,0 +1,12 @@
+# Keep the build context small. Note: *.pt weight files are intentionally NOT
+# ignored - setup.py globs them into share/hybraut_irb140/weights.
+docs/
+**/.git
+**/.github
+**/__pycache__/
+**/.pytest_cache/
+**/*.pyc
+**/.vscode/
+build/
+install/
+log/

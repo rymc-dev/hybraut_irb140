@@ -1,0 +1,7 @@
+# Pin numpy to the version ROS Jazzy's C extensions (cv_bridge, image_geometry,
+# python3-pykdl) were built against on Ubuntu Noble. Without this, ultralytics'
+# dependency opencv-python pulls numpy 2.x, which (a) fails to uninstall the
+# apt-managed numpy 1.26.4 during the image build and (b) breaks cv_bridge at
+# runtime with a numpy ABI error. pip's resolver backs off to numpy-1 compatible
+# releases of opencv-python / matplotlib / contourpy automatically.
+numpy<2

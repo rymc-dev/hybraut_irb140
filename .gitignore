@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Trained / downloaded YOLO weights - large binaries, kept out of git
+# (pretrained COCO checkpoints auto-download next to the perception notebooks)
+*.pt

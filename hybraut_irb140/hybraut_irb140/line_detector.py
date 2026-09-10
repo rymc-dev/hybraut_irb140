@@ -24,16 +24,20 @@ import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
+from rclpy.time import Time
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 
 from cv_bridge import CvBridge
 from image_geometry import PinholeCameraModel
+import tf2_ros
 from tf2_ros import Buffer, TransformListener
 import tf2_geometry_msgs  # noqa: F401 - registers PointStamped transform support
 
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped, PointStamped
 from std_msgs.msg import Bool
+
+from hybraut_irb140.perception_geometry import backproject_pixel, depth_to_meters
 
 
 class LineDetector(Node):
@@ -48,11 +52,13 @@ class LineDetector(Node):
         self.declare_parameter("line_intensity_threshold", 60)
         self.declare_parameter("min_contour_area_px", 50.0)
         self.declare_parameter("tangent_step_px", 10.0)
+        self.declare_parameter("tf_timeout", 0.1)
 
         self._base_frame: str = self.get_parameter("base_frame").value
         self._threshold: int = self.get_parameter("line_intensity_threshold").value
         self._min_area: float = self.get_parameter("min_contour_area_px").value
         self._tangent_step_px: float = self.get_parameter("tangent_step_px").value
+        self._tf_timeout: float = self.get_parameter("tf_timeout").value
 
         self._bridge = CvBridge()
         self._camera_model = PinholeCameraModel()
@@ -92,7 +98,7 @@ class LineDetector(Node):
             return
 
         bgr = self._bridge.imgmsg_to_cv2(rgb_msg, desired_encoding="bgr8")
-        depth = self._depth_to_meters(self._bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough"))
+        depth = depth_to_meters(self._bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough"))
 
         found = self._find_line(bgr)
         if found is None:
@@ -101,7 +107,7 @@ class LineDetector(Node):
 
         (cx, cy), (vx, vy) = found
 
-        point_cam = self._backproject(cx, cy, depth)
+        point_cam = backproject_pixel(cx, cy, depth, self._camera_model)
         if point_cam is None:
             self._line_visible_pub.publish(Bool(data=False))
             return
@@ -109,8 +115,9 @@ class LineDetector(Node):
         # second point a short pixel-step along the fitted line direction,
         # reusing the same depth sample (the paper is ~flat, so depth barely
         # changes over a few pixels) - just to get a tangent direction.
-        tangent_point_cam = self._backproject(
-            cx + vx * self._tangent_step_px, cy + vy * self._tangent_step_px, depth
+        tangent_point_cam = backproject_pixel(
+            cx + vx * self._tangent_step_px, cy + vy * self._tangent_step_px, depth,
+            self._camera_model,
         )
 
         stamp = rgb_msg.header
@@ -142,11 +149,6 @@ class LineDetector(Node):
 
     """ === image processing === """
 
-    def _depth_to_meters(self, depth: np.ndarray) -> np.ndarray:
-        if depth.dtype == np.uint16:
-            return depth.astype(np.float32) / 1000.0
-        return depth.astype(np.float32)
-
     def _find_line(self, bgr: np.ndarray) -> Optional[Tuple[Tuple[float, float], Tuple[float, float]]]:
         """Returns ((centroid_x, centroid_y), (tangent_x, tangent_y)) in
         pixel coordinates for the largest dark contour, or None if nothing
@@ -171,39 +173,28 @@ class LineDetector(Node):
         vx, vy, _, _ = cv2.fitLine(largest, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
         return (cx, cy), (float(vx), float(vy))
 
-    def _backproject(self, u: float, v: float, depth: np.ndarray) -> Optional[PointStamped]:
-        """Manual pinhole back-projection (u, v, depth) -> 3D point in the
-        camera's own optical frame, sampling depth over a small window
-        around (u, v) to reduce single-pixel noise."""
-        h, w = depth.shape[:2]
-        iu, iv = int(round(u)), int(round(v))
-        if not (0 <= iu < w and 0 <= iv < h):
-            return None
-
-        r = 1  # 3x3 window
-        window = depth[max(0, iv - r):iv + r + 1, max(0, iu - r):iu + r + 1]
-        valid = window[np.isfinite(window) & (window > 0.0)]
-        if valid.size == 0:
-            return None
-        z = float(np.median(valid))
-
-        fx, fy = self._camera_model.fx(), self._camera_model.fy()
-        cx0, cy0 = self._camera_model.cx(), self._camera_model.cy()
-
-        point = PointStamped()
-        point.header.frame_id = self._camera_model.tfFrame()
-        point.point.x = (u - cx0) * z / fx
-        point.point.y = (v - cy0) * z / fy
-        point.point.z = z
-        return point
-
     def _transform_point(self, point: PointStamped, header) -> Optional[PointStamped]:
-        point.header.stamp = header.stamp
-        try:
-            return self._tf_buffer.transform(point, self._base_frame, timeout=Duration(seconds=0.1))
-        except Exception as e:
-            self.get_logger().warning(f"could not transform line point into '{self._base_frame}': {e}")
-            return None
+        # eye-in-hand camera moves with the arm, so the stamped lookup is the
+        # correct one; in sim the image stamp often lands a few ms ahead of
+        # the last TF broadcast, so fall back to the latest transform.
+        for stamp in (header.stamp, Time().to_msg()):
+            point.header.stamp = stamp
+            try:
+                return self._tf_buffer.transform(
+                    point, self._base_frame, timeout=Duration(seconds=self._tf_timeout)
+                )
+            except tf2_ros.ExtrapolationException:
+                continue
+            except tf2_ros.TransformException as e:
+                self.get_logger().warning(
+                    f"could not transform line point into '{self._base_frame}': {e}"
+                )
+                return None
+        self.get_logger().warning(
+            f"could not transform line point into '{self._base_frame}': "
+            f"no usable TF at the image stamp or latest"
+        )
+        return None
 
 
 def main() -> None:

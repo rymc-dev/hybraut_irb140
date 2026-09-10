@@ -115,6 +115,17 @@
 
 \chapter*{Abstract}
 
+This report presents the integration and evaluation of the Robot Operating System
+(ROS) with an ABB IRB140 industrial manipulator controlled by an IRB5 controller. A reproducible ROS-Industrial
+platform was established using ROS Melodic, abb_driver, a direct Ethernet connection, controller-side motion and state servers 
+implemented in ABB's RAPID programming language, and an IRB140 robot description. The resulting system supports live 
+joint-state feedback, action-based joint-trajectory commands, MoveIt motion planning, RViz and Foxglove visualization, colour and depth data from an Intel RealSense D405 depth camera,
+and rosbag-based experiment recording alongside real life for offline training we developed a digital twin of our robotic cell, mm accurate
+world object meshes, added to the world based on exact measurements and ABB IRB140 urdf for loading in gazebo with ROS2 controller for the robotic
+arm to mimic the control via IRB140 as well as the design and implementation of a custom pneumatic end effector for the ABB IRB140 to enable 
+us to test various simple industrial tasks utilizing the ros integration. we then performed performance analysis of the system 
+to see how good it responds to commands etc etc etc. 
+
 \cleardoublepage
 \tableofcontents
 \cleardoublepage
@@ -125,6 +136,33 @@
 \pagenumbering{arabic}
 
 \chapter{Introduction}
+
+The Robot Operating System \(ROS\) is a widely adopted open-source middleware framework for 
+robotic software development. It's modular topic, service and action interfaces allow developers to combine hardware drivers with reusable pakcages for perception, planning, control 
+and visualization, why would we be interested in utilizing ROS for this project? there are a few reasons
+first the eco system and integration, moveit motion planning library gives a robust trajectory planning and collision avoidance out-of-the-box, extensive sensor integration
+makes it easy to integrate my D405 camera within the system, standardized representaition being URDF which allows me to convert cad to urdf
+
+THis is an open-source and research orientated framework, it is community supported and documentation for industrqal arms
+reproducibility and transparaency for academic work and gazebo simulation alligns with real system (URDF-based )
+
+middleware benefits include decouples development pipeline for control, enabling distributed processing perception-> planning -> control
+standardized message formats for inter-component communication, ABB's official ROS drviers availabel providen in research / industrial settigs, skills transfore to other colllaborative
+manipulators (UR, KUKA)
+
+
+the reason we use ROS1 is because of IRB140 PLATFORM DOES NTO have the egm component in the controller required by the ros2 abb_robot_driver so we utilize 
+the older abb_driver which does not have this problem, why don't we use the alternatives, ABB RAPID - navitve programming - tighly coupled to the controller and limits sensor fusion and modulality for vision based sorting task
+abb flex pendant gui limited for automated research applications. 
+
+alternative middlewards - Drake ( Toyota robotics library) Excellend for simulation/optimization, but overkill and less alligned with industrial arm drviers
+webots/CyberDuck - simulation-frist; not ideal for controlling real hardware
+PyBullet - physics engine, not middleware, lacks real-time control abstraction.
+
+OTher robotic platforms include Universal Robots (UR+) OR tECHMAN - they have integrated ecosystems but less open; you're locked 
+into their framework
+KUKA IIWA or KRL - similar trade-offs to ABB RAPID....
+
 
 \chapter{Theory Analysis and Design}
 
@@ -267,6 +305,25 @@ world model
 
 
 
+pneumatics design
+
+the pneumatic flow is always the same just with different dsi for different tasks
+
+our gripper utilizies this flow
+
+air valve -> air resistor \(0.2MPa\)-> the solnoid valve which has this air flow FSM: TODO: ATTACH AIR FLOW FSM DIAGRAM
+-> airflow resistor \(0.05MPa\) 0 -> t-splitter for the grippers -> into the silocon mould valves 
+
+closing off the airflow for the grippers
+
+as for electronic control for the IRC5 controller we wanted to utilize the R2.CS port on the IRB140 so that we would 
+only have to plugin in a circular intake and the wiring would be3 simple, after extensive investigation into circuit charts, documentaion
+and so on that was availble and even opening the robot up and tracing the wries we discovered that although utilizing multimeter and finding some of the pins on R2.CS have 
+a 24v signal being drivern to them we discovered that there was no actual way to digitally drive signals by default to the pins from the IRC5 compact pendant this is due to a some hacking
+needing to be done on the IRC5 to add the R2.CS as a component on the device net which it is not by default.
+
+as for wiring XS14 port 1 and 2 for live 1 being the digital output 24v for 1 1 v for 0 for opening clsoing the grippers, 2 being opening the grippers again. and for neutral XS12 - 9.
+
 \subsection{Components Assembly and Build}
 
 
@@ -289,7 +346,23 @@ solenoid valves to ensure the fingers did not burst. This was fine, but in futur
 useful to use a stronger material to remove this concern, as bursting a finger during testing
 would have been a costly setback.
 
+\subsection{ROS2 control}
+
+control of the end effector is difficult. 
+
+Simulating the robot in gazebo means utilizing two controllers, one for the robotic arm
+another for the pneumatic gripper, 
+the pneumatic gripper model in simulation is a combination of several different joints per 
+finger, like a human finger, we can't simulate the silicone joint's for air caused closing of the finger. 
+
+
+.... 
+
 \chapter{Findings/Results and Discussion}
+
+\subsection{Digital Twin}
+
+\subsection{}
 
 \chapter{Conclusions}
 

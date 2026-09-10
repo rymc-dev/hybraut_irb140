@@ -8,6 +8,8 @@
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
+  <!-- Match the host's DDS vendor; docker_build_run.sh sets RMW_IMPLEMENTATION=rmw_cyclonedds_cpp -->
+  <exec_depend>rmw_cyclonedds_cpp</exec_depend>
   <depend>rcl_interfaces</depend>
   <depend>ament_index_python</depend>
   <depend>sensor_msgs</depend>

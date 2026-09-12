@@ -13,6 +13,7 @@
 \usepackage{titlesec}
 \titleformat{\chapter}[hang]{\normalfont\huge\bfseries}{\thechapter}{1em}{}
 \titlespacing*{\chapter}{0pt}{-12pt}{18pt}
+\usepackage{amsmath}
 \usepackage{setspace}
 \usepackage{parskip}
 \setlength{\parskip}{0.45em}
@@ -47,6 +48,11 @@
 
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \renewcommand{\arraystretch}{1.15}
+
+% -- Placeholder box for figures whose image file doesn't exist yet --
+\newcommand{\placeholderfigure}[2][5cm]{%
+  \fbox{\parbox[c][#1][c]{0.7\textwidth}{\centering\itshape #2}}%
+}
 
 % -- Code listing style --
 \lstset{
@@ -115,16 +121,20 @@
 
 \chapter*{Abstract}
 
-This report presents the integration and evaluation of the Robot Operating System
-(ROS) with an ABB IRB140 industrial manipulator controlled by an IRB5 controller. A reproducible ROS-Industrial
-platform was established using ROS Melodic, abb_driver, a direct Ethernet connection, controller-side motion and state servers 
-implemented in ABB's RAPID programming language, and an IRB140 robot description. The resulting system supports live 
-joint-state feedback, action-based joint-trajectory commands, MoveIt motion planning, RViz and Foxglove visualization, colour and depth data from an Intel RealSense D405 depth camera,
-and rosbag-based experiment recording alongside real life for offline training we developed a digital twin of our robotic cell, mm accurate
-world object meshes, added to the world based on exact measurements and ABB IRB140 urdf for loading in gazebo with ROS2 controller for the robotic
-arm to mimic the control via IRB140 as well as the design and implementation of a custom pneumatic end effector for the ABB IRB140 to enable 
-us to test various simple industrial tasks utilizing the ros integration. we then performed performance analysis of the system 
-to see how good it responds to commands etc etc etc. 
+This report presents the integration and evaluation of the Robot Operating System (ROS) with an
+ABB IRB140 industrial manipulator controlled by an IRC5 controller. A reproducible ROS-Industrial
+platform was established using ROS Melodic, \texttt{abb\_driver}, a direct Ethernet connection,
+controller-side motion and state servers implemented in ABB's RAPID programming language, and an
+IRB140 robot description. The resulting system supports live joint-state feedback, action-based
+joint-trajectory commands, MoveIt motion planning, RViz and Foxglove visualization, colour and
+depth data from an Intel RealSense D405 depth camera, and rosbag-based experiment recording.
+
+Alongside the real system, we developed a digital twin of the robotic cell -- with millimetre-accurate
+world object meshes added based on exact measurements, and an IRB140 URDF for loading into Gazebo
+with a ROS2 controller -- so that the simulated arm mimics the behaviour of the real IRB140. We also
+designed and built a custom pneumatic end effector for the IRB140, enabling us to test simple
+industrial pick-and-place tasks using the ROS integration, and performed a performance analysis of
+the system to evaluate how it responds to commands.
 
 \cleardoublepage
 \tableofcontents
@@ -135,45 +145,223 @@ to see how good it responds to commands etc etc etc.
 \cleardoublepage
 \pagenumbering{arabic}
 
-\chapter{Introduction}
+\chapter{Motivation \& Introduction}
 
-The Robot Operating System \(ROS\) is a widely adopted open-source middleware framework for 
-robotic software development. It's modular topic, service and action interfaces allow developers to combine hardware drivers with reusable pakcages for perception, planning, control 
-and visualization, why would we be interested in utilizing ROS for this project? there are a few reasons
-first the eco system and integration, moveit motion planning library gives a robust trajectory planning and collision avoidance out-of-the-box, extensive sensor integration
-makes it easy to integrate my D405 camera within the system, standardized representaition being URDF which allows me to convert cad to urdf
+The world of robotics is ever increasing the time time for over-actuated robotics is quickly fading
+with many of todacy's and the pasts robotics operating in industrial settings where large actualtors could 
+be used to shape dynamics of the machine to achieve precision and repeatability we still want to keep 
+the precision but we also want to utilize these complex machines for more complicated dynamic 
+tasks which they are capable of with the correct intelligence via control stratgies and environmental 
+awareness hence why we are exploring this topic of ros industrail for the purpose 
+of converting a system like irb140 into a more intellgient system that can adapt to complex tasks
+without human intervention to do this we can't just use the already existing infrastructure for 
+older robotic hardware we need to connect it to more modern frameworks one being ROS. The world of robotics is ever increasing the time time for over-actuated robotics is quickly fading
+with many of todacy's and the pasts robotics operating in industrial settings where large actualtors could 
+be used to shape dynamics of the machine to achieve precision and repeatability we still want to keep 
+the precision but we also want to utilize these 
 
-THis is an open-source and research orientated framework, it is community supported and documentation for industrqal arms
-reproducibility and transparaency for academic work and gazebo simulation alligns with real system (URDF-based )
+The Robot Operating System (ROS) is a widely adopted open-source middleware framework for
+robotic software development. Its modular topic, service and action interfaces allow developers
+to combine hardware drivers with reusable packages for perception, planning, control and
+visualization. There are a few reasons ROS was chosen for this project:
 
-middleware benefits include decouples development pipeline for control, enabling distributed processing perception-> planning -> control
-standardized message formats for inter-component communication, ABB's official ROS drviers availabel providen in research / industrial settigs, skills transfore to other colllaborative
-manipulators (UR, KUKA)
+\begin{itemize}
+  \item \textbf{Ecosystem and integration:} the MoveIt motion planning library provides robust
+  trajectory planning and collision avoidance out of the box, extensive sensor integration makes
+  it easy to bring the D405 camera into the system, and the standardized URDF representation makes
+  it straightforward to convert CAD models to a robot description.
+  \item \textbf{Open source and research-oriented:} ROS is community supported, well documented
+  for industrial arms, and supports reproducibility and transparency for academic work; Gazebo
+  simulation also aligns closely with the real, URDF-based system.
+  \item \textbf{Middleware benefits:} ROS decouples the development pipeline for control, enabling
+  distributed processing across perception, planning and control with standardized message
+  formats for inter-component communication. ABB provides official ROS drivers proven in research
+  and industrial settings, and the skills involved transfer to other collaborative manipulators
+  (UR, KUKA).
+\end{itemize}
 
+We use ROS1 rather than ROS2 because the IRB140 platform's controller does not have the EGM
+component required by the ROS2 \texttt{abb\_robot\_driver}, so we instead use the older
+\texttt{abb\_driver}, which does not have this requirement. The alternatives to ROS were also
+considered and ruled out:
 
-the reason we use ROS1 is because of IRB140 PLATFORM DOES NTO have the egm component in the controller required by the ros2 abb_robot_driver so we utilize 
-the older abb_driver which does not have this problem, why don't we use the alternatives, ABB RAPID - navitve programming - tighly coupled to the controller and limits sensor fusion and modulality for vision based sorting task
-abb flex pendant gui limited for automated research applications. 
+\begin{itemize}
+  \item \textbf{ABB RAPID (native programming):} tightly coupled to the controller, and limits
+  sensor fusion and modularity for vision-based sorting tasks.
+  \item \textbf{ABB FlexPendant GUI:} too limited for automated research applications.
+  \item \textbf{Drake (Toyota Research Institute):} excellent for simulation/optimization, but
+  overkill here and less aligned with industrial arm drivers.
+  \item \textbf{Webots/CoppeliaSim:} simulation-first, not ideal for controlling real hardware.
+  \item \textbf{PyBullet:} a physics engine rather than middleware, and lacks a real-time control
+  abstraction.
+\end{itemize}
 
-alternative middlewards - Drake ( Toyota robotics library) Excellend for simulation/optimization, but overkill and less alligned with industrial arm drviers
-webots/CyberDuck - simulation-frist; not ideal for controlling real hardware
-PyBullet - physics engine, not middleware, lacks real-time control abstraction.
+Other robotic platforms were also considered:
 
-OTher robotic platforms include Universal Robots (UR+) OR tECHMAN - they have integrated ecosystems but less open; you're locked 
-into their framework
-KUKA IIWA or KRL - similar trade-offs to ABB RAPID....
-
+\begin{itemize}
+  \item \textbf{Universal Robots (UR+) or Techman:} integrated ecosystems, but less open -- you
+  end up locked into their framework.
+  \item \textbf{KUKA iiwa / KRL:} similar trade-offs to ABB RAPID.
+\end{itemize}
 
 \chapter{Theory Analysis and Design}
 
+The ABB IRB140 is a 6-axis industrial robot with a payload of 6\,kg, making it a versatile robot
+that is easy to integrate into many industrial applications: it has an open structure designed for
+flexible use, and communication options that enable communication with many different platforms,
+including potentially ROS.
+
+Use cases for this robot include:
+\begin{itemize}
+  \item Assembly
+  \item Material handling and pick-and-place
+  \item Machine tending
+  \item Arc welding
+  \item Surface finishing \& machining
+  \item Spraying \& dispensing
+\end{itemize}
+
+Some notable companies that use the IRB140 include the BMW Group, who use the IRB140 Foundry Plus
+for critical auxiliary foundry tasks: equipped with pneumatic gravers, it automatically engraves
+date, time and quality-tracking status onto hot, freshly cast aluminum. AstraZeneca also use it for
+consumer medical goods -- the high-speed version (IRB140T), paired with vision systems, manages the
+rapid picking, sorting and packaging of pharmaceuticals (e.g.\ Rhinocort and Nexium) and boxes.
+
+There are also specialized variants of this robot platform with similar interfaces, such as the
+Foundry Plus 2/TF, which has IP67-rated sealed electronics and a corrosion-resistant coating for
+harsh foundry environments and die casting.
+
+Ultimately, the global industrial landscape is experiencing a structural paradigm shift driven by demographic collapses,
+the massive physical expansion of AI infrastructure, and the emergence of Physical AI. With the OECD projecting a net loss
+of 15 million workers by 2030 and next-generation data centers driving an automation market projected to exceed \$61.9 billion,
+robotics has transitioned from a discretionary efficiency tool to a macroeconomic necessity. This workforce deficit has established
+a 94\% statistical correlation between labor shortages and subsequent robotic integration.
+It has also accelerated the adoption of specialized, high-density automation systems capable of operating in extreme or sterile environments.
+As factories increasingly rely on automation to absorb these global labor and infrastructure shocks, understanding the precise kinematic and
+mechanical capabilities of small-footprint, high-reliability systems becomes paramount. Consequently, the following sections provide a rigorous technical
+analysis of the ABB IRB 140, detailing its six degrees of freedom, structural kinematics, workspace envelopes, and specific mechanical configurations required to meet these evolving industrial demands.
+
+\subsection*{Physical Structure Analysis of the IRB140}
+
+The IRB140 has 6 DOF, controlled by 6 axes, each assigned a position mnemonic A--F for Axis 1--6.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\textwidth]{./figures/theory/irb140_axis.png}
+  \caption{fig: ABB IRB140 product manual axis diagram~\cite{irb140_product_manual}}
+  \label{fig:abb-irb140-axis}
+\end{figure}
+
+Each of these axes can be referred to as a joint; for the remainder of this document I will refer
+to them as Joints, to follow ROS conventions, so Axis 1--6 will be known as J1--J6. Each of these
+joints is of Revolute type. J1 is the base rotation, rotating the arm around the vertical axis; J2
+is the shoulder/arm movement joint; J3 is the elbow/upper-arm movement joint; J4 is the wrist
+joint; J5 is wrist bending; and J6 is the wrist/end-effector rotation joint. ABB groups J1--J3 as
+arm motion and J4--J6 as wrist motion.
+
+In kinematic terms, our IRB140 is:
+\[
+\text{R--R--R--R--R--R}
+\]
+with joint variables:
+\[
+\mathbf{q} = [q_1, q_2, q_3, q_4, q_5, q_6]^{T}
+\]
+
+On the IRC5 controller, joint positions are reported as quaternion-based tool orientations plus a
+translational position, while on ROS2 we work directly with joint angles in radians.
+
+As for the links -- the physical interconnects between the joints -- we also have 6, denoted
+Link~0 through Link~5:
+
+\begin{itemize}
+  \item \textbf{Link 0:} the base, between Ground and J1 -- the stationary mounting structure.
+  \item \textbf{Link 1:} the lower arm/arm housing, J1 $\rightarrow$ J2/J3 region; rotates around
+  J1 and carries the shoulder mechanism.
+  \item \textbf{Link 2:} the upper arm, J2/J3 $\rightarrow$ J4; the main long arm section, moving
+  with the shoulder/elbow.
+  \item \textbf{Link 3:} the wrist housing/forearm, J4 $\rightarrow$ J5/J6; rotates with Axis 4 and
+  carries the wrist axes.
+  \item \textbf{Link 4:} the wrist section, J5 $\rightarrow$ J6; provides wrist orientation.
+  \item \textbf{Link 5:} the tool flange/turn disc, J6 $\rightarrow$ tool; the final rotating
+  interface to the end effector.
+\end{itemize}
+
+One thing to note is that the IRB140 is not simply six rigid links connected by six visible axes,
+but we can theoretically consider it this way, as this is also the convention used by ROS.
+
+The robot's dimensions are specified in Fig.~\ref{fig:abb-irb140-dimensions}, with an overall
+height of 810\,mm, a length of 595\,mm at the default joint orientation, and a width of 402\,mm.
+These dimensions and axes give our robot a reach of 0.8\,m.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\textwidth]{./figures/theory/irb140_dimensions.png}
+  \caption{ABB IRB140 product manual dimensions diagram~\cite{irb140_product_manual}}
+  \label{fig:abb-irb140-dimensions}
+\end{figure}
+
+As for mounting tools, the IRB140 has a tool flange adapter for universal mounting, with four
+mounting holes for 4x M5, 7.5\,mm depth, mounting holes (Fig.~\ref{fig:abb-irb140-tool-flange-drawing}).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\textwidth]{./figures/theory/irb140_tool_flange_mounting_holes.png}
+  \caption{ABB IRB140 product manual tool flange diagram~\cite{irb140_product_manual}}
+  \label{fig:abb-irb140-tool-flange-drawing}
+\end{figure}
+
+Integrating the IRB140 is quite simple: the robot has several connection point locations, and the
+main connection points we discuss are as follows. On the back of the robot we have several
+connections:
+
+\begin{itemize}
+  \item \textbf{R} = robot axis
+  \item \textbf{MP} = Motor Power (servo motor electrical connections)
+  \item \textbf{FB} = Feedback (encoder feedback signals)
+  \item \textbf{H} = Hold/Brake (axis holding brake)
+  \item \textbf{CS} = Control Signal
+  \item \textbf{SMB} = Status/Motor Brake
+  \item \textbf{AIR} = Pneumatic air connections
+  \item \textbf{G} = Ground
+  \item \textbf{S1} = Sensor signal
+\end{itemize}
+
+
+\subsection{IRC5 controller}
+
+The IRC5 controller is the backbone of control for the IRB140; our lab uses an IRC5 Compact.
+
+% TODO: expand on what this controller integrates
+
 \section{End Effector}
+
+To test the full capabilities of the ABB IRC5 controller, we wanted to use an end effector the
+way a client of this system would. To fulfil our objective of intelligently picking up objects,
+our requirements were simple:
 
 \subsection{Requirements}
 
+\begin{itemize}
+  \item Must mount to the tool flange mounting holes
+  \item Must be mountable with a RealSense D405
+  \item Must support mounting two grippers
+\end{itemize}
+
 \subsection{Design}
 
-A two-part design: a tool flange adapter neck, which adds spacing between the tool flange
-and the base plate mounting for the components of the end effector.
+A two-part design: a tool flange adapter neck, which adds spacing between the tool flange and the
+base plate mounting the end-effector components. Since we are connecting pneumatic gripper
+fingers, we need some space between the end of the robotic arm and an air hose in order to
+connect it properly.
+
+The easiest way to do this was to create a custom pneumatic gripper design. We already had
+silicone gripper moulds in the lab, so by reusing the dimensions from the CAD drawings of some
+other, previously designed grippers, we were able to design a pneumatic gripper to fulfil our
+needs.
+
+
+\subsection{Mechanical Design}
 
 \begin{figure}[ht]
   \centering
@@ -231,7 +419,60 @@ and the base plate mounting for the components of the end effector.
   \label{fig:assembly-render-underside}
 \end{figure}
 
+\subsection{Pneumatics Design}
+\label{sec:pneumatics-design}
+
+At the heart of our pneumatics design is an SMC SY5000 Series 5-port pneumatic solenoid valve, a directional
+control valve with the following specification:
+
+\begin{itemize}
+  \item \textbf{Coil:} low-wattage
+  \item \textbf{Fittings:} one-touch fittings on ports A and B, G-thread standard
+  \item \textbf{Fluid:} air
+  \item \textbf{Operating pressure:} 0.15--0.7\,MPa
+  \item \textbf{Operating temperature:} $-10$ to $+50\,^{\circ}\text{C}$
+  \item \textbf{Body material:} die-cast aluminum and aluminum alloy
+  \item \textbf{Seal material:} Hydrogenated Nitrile Rubber (H-NBR)
+\end{itemize}
+
+The finite state machine for the solenoid valve is shown below.
+
+\begin{figure}
+  \centering
+  % TODO: replace with the actual FSM diagram (./figures/theory/smc_sy5000_series5_port_fsm)
+  \placeholderfigure{Diagram pending: SMC SY5000 solenoid valve FSM}
+  \caption{Finite state machine of the pneumatic control of the solenoid valve}
+  \label{fig:smc-sy5000-series5-port-fsm}
+\end{figure}
+
+The FSM in Fig.~\ref{fig:smc-sy5000-series5-port-fsm} shows two states of interest:
+
+\begin{itemize}
+  \item \textbf{De-energized (default):} no voltage is applied to either side of the solenoid.
+  \item \textbf{Bottom side energized:} pneumatic port A on the right side is linked to port A on the left
+  side, and port B on the right side is linked to port B on the left side.
+\end{itemize}
+
+This routes air from the input port through to the output ports. For our purposes we only need to wire up
+this one side of the solenoid, since a second air regulator sits downstream on the valve's output. When air
+pressure is removed, this stage drains and the grippers deactivate; when pressure is applied, the grippers
+activate. The valve's output is then split via a T-fitting into the inputs of both silicone gripper fingers.
+
+The pneumatic wiring is laid out as follows:
+
+\begin{center}
+air source $\rightarrow$ regulator 1 (0.2\,MPa) $\rightarrow$ port B input of solenoid valve
+$\rightarrow$ port B output of solenoid valve $\rightarrow$ regulator 2 (0.3\,MPa) $\rightarrow$
+T-splitter $\rightarrow$ left and right pneumatic gripper fingers
+\end{center}
+
+
+
+
 \subsection{Digital Twin Design}
+
+The end effector was also modelled in simulation as a URDF, so it can be visualized and driven
+alongside the rest of the digital twin.
 
 \begin{figure}[ht]
   \centering
@@ -257,76 +498,117 @@ and the base plate mounting for the components of the end effector.
 
 \subsection{Digital Twinning}
 
-environment measurements
+To build an accurate digital twin of the robotic cell, we took physical measurements of the lab
+environment and modelled the key fixtures -- the robot podium and the work table -- so that the
+simulated world matches the real cell.
 
-Robot Podium Design
-
+\subsubsection{Robot Podium}
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.7\textwidth]{./figures/design/digital  twin/robot_podium_drawing_image.png}
-  \caption{Gazebo world model}
-  \label{fig:world-model}  
+  \includegraphics[width=0.7\textwidth]{./figures/design/digital_twin/robot_podium_drawing_image.png}
+  \caption{Robot podium drawing}
+  \label{fig:robot-podium-drawing}
 \end{figure}
 
+\subsubsection{Table}
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.7\textwidth]{./figures/design/digital  twin/robot_podium_drawing_image.png}
-  \caption{Gazebo world model}
-  \label{fig:world-model}  
-\end{figure}
-
-Table design
-
-\begin{figure}
-  \centering
-  \includegraphics[width=0.7\textwidth]{./figures/design/digital  twin/table_drawing_image.png}
-  \caption{Gazebo world model}
-  \label{fig:world-model}  
+  \includegraphics[width=0.7\textwidth]{./figures/design/digital_twin/table_drawing_image.png}
+  \caption{Work table drawing}
+  \label{fig:table-drawing}
 \end{figure}
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.7\textwidth]{./figures/design/digital  twin/Table Render.png}
-  \caption{Gazebo world model}
-  \label{fig:world-model}  
+  \includegraphics[width=0.7\textwidth]{./figures/design/digital_twin/Table Render.png}
+  \caption{Work table render}
+  \label{fig:table-render}
 \end{figure}
 
-world model
+\subsubsection{World Model}
+
+With the podium and table modelled, both were placed into the Gazebo world alongside the robot
+and end effector to complete the digital twin.
 
 \begin{figure}
   \centering
   \includegraphics[width=0.7\textwidth]{./figures/implementation/world_model/world_model_1.png}
   \caption{Gazebo world model}
-  \label{fig:world-model}  
+  \label{fig:world-model}
 \end{figure}
 
+\subsubsection{Pneumatics Flow for Simulated Tasks}
 
+The pneumatic flow topology used for these tasks is the same one described in
+Section~\ref{sec:pneumatics-design}, just with different regulator pressures depending on the task:
 
+\begin{center}
+air source $\rightarrow$ regulator (0.2\,MPa) $\rightarrow$ solenoid valve (FSM in
+Fig.~\ref{fig:smc-sy5000-series5-port-fsm}) $\rightarrow$ regulator (0.05\,MPa) $\rightarrow$
+T-splitter $\rightarrow$ silicone gripper fingers
+\end{center}
 
-pneumatics design
+Removing air pressure from this stage closes off the airflow to the grippers and deactivates them.
 
-the pneumatic flow is always the same just with different dsi for different tasks
+\subsubsection{Electrical / IO Integration}
 
-our gripper utilizies this flow
+For electronic control from the IRC5 controller, we initially wanted to use the R2.CS port on the
+IRB140 so that only a single circular connector and a simple wiring loom would be needed. After
+investigating the available circuit diagrams and documentation, and opening the robot up to trace
+the wiring directly, we found (using a multimeter) that some pins on R2.CS do carry a 24\,V
+signal, but there is no way to drive them digitally by default from the IRC5 Compact pendant --
+R2.CS is not a DeviceNet component out of the box, and enabling it would require additional
+hardware/firmware changes to the IRC5.
 
-air valve -> air resistor \(0.2MPa\)-> the solnoid valve which has this air flow FSM: TODO: ATTACH AIR FLOW FSM DIAGRAM
--> airflow resistor \(0.05MPa\) 0 -> t-splitter for the grippers -> into the silocon mould valves 
+Instead, gripper control is wired through XS14 and XS12: XS14 pin~1 is the digital output that
+drives the grippers open/closed (24\,V for open, 0\,V for closed), XS14 pin~2 drives the grippers
+open, and XS12 pin~9 provides the neutral return.
 
-closing off the airflow for the grippers
+To verify the wiring and control logic, we ran \texttt{abb\_integration} together with RViz,
+primarily for joint-state publishing: a state server publishes joint states to RViz, while the
+pick-and-place logic runs on the controller as a RAPID module (\texttt{abb\_script}):
 
-as for electronic control for the IRC5 controller we wanted to utilize the R2.CS port on the IRB140 so that we would 
-only have to plugin in a circular intake and the wiring would be3 simple, after extensive investigation into circuit charts, documentaion
-and so on that was availble and even opening the robot up and tracing the wries we discovered that although utilizing multimeter and finding some of the pins on R2.CS have 
-a 24v signal being drivern to them we discovered that there was no actual way to digitally drive signals by default to the pins from the IRC5 compact pendant this is due to a some hacking
-needing to be done on the IRC5 to add the R2.CS as a component on the device net which it is not by default.
-
-as for wiring XS14 port 1 and 2 for live 1 being the digital output 24v for 1 1 v for 0 for opening clsoing the grippers, 2 being opening the grippers again. and for neutral XS12 - 9.
+\begin{lstlisting}[caption={RAPID pick-and-place routine (in progress).},label={lst:rapid-pick-and-place}]
+PROC PickAndPlace()
+  ! TODO: implement pick-and-place sequence
+ENDPROC
+\end{lstlisting}
 
 \subsection{Components Assembly and Build}
 
+This section covers three areas of the build: ROS integration, MoveIt integration, and the
+perception pipeline.
 
+\subsubsection{ROS Integration}
+
+% TODO: expand
+
+\subsubsection{MoveIt Integration}
+
+% TODO: expand
+
+\subsubsection{Perception Pipeline}
+
+% TODO: expand
+
+% TODO: attach the SLAM mapping demonstration image (./figures/demonstrations/slam/slam_mapping_demo_image.png)
+\begin{figure}
+  \centering
+  \placeholderfigure{Image pending: SLAM mapping demonstration}
+  \caption{Demonstration of SLAM mapping using \texttt{octomap\_server}: our digital twin
+    simulation mapping (left) alongside the equivalent mapping in the real robotic cell (right).}
+  \label{fig:slam-mapping-demo-image}
+\end{figure}
+
+% TODO: attach a second demonstration image
+\begin{figure}
+  \centering
+  \placeholderfigure{Image pending}
+  \caption{Placeholder for a further demonstration image.}
+  \label{fig:demo-placeholder}
+\end{figure}
 
 \subsection{Issues and Future Improvements}
 
@@ -348,21 +630,21 @@ would have been a costly setback.
 
 \subsection{ROS2 control}
 
-control of the end effector is difficult. 
-
-Simulating the robot in gazebo means utilizing two controllers, one for the robotic arm
-another for the pneumatic gripper, 
-the pneumatic gripper model in simulation is a combination of several different joints per 
-finger, like a human finger, we can't simulate the silicone joint's for air caused closing of the finger. 
-
-
-.... 
+Control of the end effector is difficult. Simulating the robot in Gazebo requires two
+controllers: one for the robotic arm, and another for the pneumatic gripper. The pneumatic
+gripper model in simulation is a combination of several different joints per finger, similar to
+a human finger, since we cannot simulate the silicone fingers' actual air-driven closing motion
+directly -- the joint chain is used as an approximation instead.
 
 \chapter{Findings/Results and Discussion}
 
 \subsection{Digital Twin}
 
-\subsection{}
+% TODO: expand
+
+\subsection{Performance Analysis}
+
+% TODO: expand
 
 \chapter{Conclusions}
 
@@ -370,9 +652,13 @@ finger, like a human finger, we can't simulate the silicone joint's for air caus
 
 \chapter{References/Bibliography}
 
+Datasets used:
 \begin{itemize}
   \item \url{https://www.kaggle.com/datasets/ronanpickell/b100-lego-detection-dataset?resource=download} -- YOLO LEGO detection training dataset
 \end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
 
 \appendix
 

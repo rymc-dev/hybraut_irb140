@@ -38,6 +38,7 @@ setup(
             'hybraut_irb140_line_follower = hybraut_irb140.hybraut_irb140_line_follower:main',
             'hybraut_irb140_lego_detector = hybraut_irb140.lego_detector:main',
             'hybraut_irb140_ball_detector = hybraut_irb140.ball_detector:main',
+            'hybraut_irb140_ball_pick_and_place = hybraut_irb140.ball_pick_and_place:main',
         ],
     },
 )

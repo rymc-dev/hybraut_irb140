@@ -265,16 +265,17 @@ class BallDetector(Node):
             pt_cam.point.z += r_m
 
             # `backproject_pixel` returns REP-103 optical coords (x right, y
-            # down, z forward), but this robot's URDF leaves
-            # `depth_camera_optical` un-rotated from the camera body link, so
-            # tf2 treats its axes as body-style (x forward, y left, z up) -
-            # matching the gz point cloud. Re-express the point in those axes
-            # here, otherwise the forward range lands on base +Z instead of
-            # base +X.
+            # down, z forward). This robot's URDF leaves `depth_camera_optical`
+            # un-rotated from the camera body link, so tf2 treats its axes as
+            # body-style. The camera/base mounting convention puts "forward"
+            # along base +Z, not +X, so re-express the point accordingly here
+            # (a 90-degree rotation about the left/right axis relative to the
+            # previous x=forward,y=left,z=up convention) before the tf2
+            # transform.
             ox, oy, oz = pt_cam.point.x, pt_cam.point.y, pt_cam.point.z
-            pt_cam.point.x = oz
-            pt_cam.point.y = -ox
-            pt_cam.point.z = -oy
+            pt_cam.point.x = -oy
+            pt_cam.point.y = ox
+            pt_cam.point.z = oz
 
             pt_base = self._transform_point(pt_cam, rgb_msg.header)
             if pt_base is None:
